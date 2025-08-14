@@ -2,53 +2,64 @@
 <html lang="es">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>SMEAT vs </title>
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+<title>SMEAT vs Contaminantes</title>
 <style>
   :root{
-    --bg: #0a0f1d; --panel:#0d1426; --ink:#c7d2fe; --accent:#60a5fa; --warn:#f59e0b; --danger:#ef4444; --good:#22c55e;
+    --bg:#0a0f1d; --panel:#0d1426; --ink:#c7d2fe; --accent:#60a5fa; --warn:#f59e0b; --danger:#ef4444; --good:#22c55e;
+  }
+  h1{
+      display:none;
   }
   *{box-sizing:border-box}
   body{margin:0;background:radial-gradient(1200px 500px at 50% 20%,#0f1a33,#070b16);color:var(--ink);font-family:system-ui,Segoe UI,Inter,Roboto,sans-serif}
-  .wrap{max-width:900px;margin:0 auto;padding:16px}
+  .wrap{max-width:900px;margin:0 auto;padding:16px;margin-top:-60px;}
   .card{background:linear-gradient(180deg,#0b1120,#0a0f1d);border:1px solid #1f2a44;border-radius:16px;padding:16px;box-shadow:0 10px 40px rgba(0,0,0,.35)}
   h1{margin:0 0 8px 0;font-size:18px;letter-spacing:.4px}
   .bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:space-between;margin-bottom:12px}
   .hint{font-size:12px;color:#94a3b8}
-  #game{display:block;width:100%;height:auto;max-height:80vh;background:#000;border-radius:12px;border:1px solid #1f2a44}
+  #game{display:block;width:100%;height:auto;max-height:78vh;background:#000;border-radius:12px;border:1px solid #1f2a44;touch-action:none;}
   .footer{display:flex;justify-content:space-between;align-items:center;margin-top:10px}
   .btn{appearance:none;background:#0f172a;border:1px solid #1f2a44;color:#e5e7eb;border-radius:10px;padding:8px 12px;cursor:pointer}
   .btn:hover{border-color:#334155}
   .kbd{display:inline-flex;gap:6px;align-items:center;background:#0b1222;border:1px solid #1f2a44;border-radius:8px;padding:4px 8px;font-size:12px;color:#a3b2d9}
+  /* Controles táctiles */
+  .touch-controls{position:fixed;left:0;right:0;bottom:calc(10px + env(safe-area-inset-bottom));display:flex;justify-content:center;gap:20px;z-index:50;pointer-events:none}
+  .ctl-btn{pointer-events:auto;width:64px;height:64px;border-radius:999px;border:1px solid #1f2a44;background:rgba(15,23,42,.7);backdrop-filter:blur(6px);color:#e5e7eb;font-size:22px;display:flex;align-items:center;justify-content:center}
+  .ctl-btn.small{width:56px;height:56px;font-size:18px}
+  .ctl-btn:active{transform:scale(.97)}
+  @media (hover:hover) and (pointer:fine){ .touch-controls{display:none;} }
 </style>
 </head>
 <body>
 <div class="wrap">
   <div class="card">
     <div class="bar">
-      <h1>Galaga • HTML (1 nivel)</h1>
-      <div class="hint">Controles: <span class="kbd">← →</span> mover · <span class="kbd">X</span> disparar · <span class="kbd">Enter</span> iniciar · <span class="kbd">R</span> reiniciar · <span class="kbd">P</span> pausa</div>
+      <h1>SMEAT vs Contaminantes</h1>
+      <div class="hint">Controles: <span class="kbd">← →</span> Mover · <span class="kbd">X</span> Disparar · <span class="kbd">Enter</span> Iniciar · <span class="kbd">R</span> Reiniciar· <span class="kbd">P</span> Pausa</div>
     </div>
     <canvas id="game" width="480" height="640"></canvas>
     <div class="footer">
       <div style="display:flex;gap:8px;align-items:center">
         <button id="btnStart" class="btn">Iniciar</button>
-        <button id="btnTest" class="btn" title="Ejecuta pruebas rápidas">Reiniciar</button>
       </div>
     </div>
   </div>
 </div>
+<!-- Controles táctiles -->
+<div class="touch-controls" id="touchControls" aria-hidden="true">
+  <button class="ctl-btn" id="btnLeft" aria-label="Izquierda">⟵</button>
+  <button class="ctl-btn" id="btnFire" aria-label="Disparar">●</button>
+  <button class="ctl-btn" id="btnRight" aria-label="Derecha">⟶</button>
+  <button class="ctl-btn small" id="btnRestart" aria-label="Reiniciar">↻</button>
+</div>
 <script>
 /**
- * GALAGA (single level) — HTML Canvas
- * - Flechas ← → para mover; X para disparar.
- * - Enemigos dibujados con figuras Canvas; jugador es una imagen.
- * - Un solo nivel: elimina toda la formación para ganar.
- * - Sin dependencias. Un solo archivo.
- *
- * FIX 1: Inicialización segura de colecciones (enemies, bullets, etc.) antes del primer draw().
- * FIX 2: Carga robusta del sprite del jugador usando decode()/onload/onerror y guardas
- *        para evitar "InvalidStateError: drawImage ... 'broken' state".
+ * SMEAT vs Contaminantes — HTML Canvas (1 nivel)
+ * - Flechas ← → o botones táctiles para mover; X / botón ● para disparar.
+ * - Enemigos (contaminantes) dibujados con Canvas; jugador es imagen.
+ * - Responsive: en pantallas pequeñas se reduce la formación enemiga.
+ * - Móviles: botones táctiles, preventDefault en gestos y canvas no desplazable.
  */
 
 /*****************
@@ -57,24 +68,24 @@
 const CONFIG = {
   CANVAS_W: 480,
   CANVAS_H: 640,
-  PLAYER_SPEED: 260, // px/s
-  PLAYER_W: 90,
-  PLAYER_H: 90,
+  PLAYER_SPEED: 260, // px/s en espacio lógico
+  PLAYER_W: 70,
+  PLAYER_H: 70,
   PLAYER_BULLET_SPEED: -520,
-  PLAYER_MAX_BULLETS: 2, // Galaga clásico limita; puedes subirlo a 3
+  PLAYER_MAX_BULLETS: 2,
   ENEMY_ROWS: 4,
   ENEMY_COLS: 8,
   ENEMY_SPACING_X: 44,
   ENEMY_SPACING_Y: 40,
   ENEMY_START_Y: 90,
-  ENEMY_OSC_AMPL: 26, // oscilación horizontal de la formación
+  ENEMY_OSC_AMPL: 26,
   ENEMY_OSC_SPEED: 1.2,
   ENEMY_STEP_DOWN: 8,
   ENEMY_BULLET_SPEED: 240,
-  ENEMY_FIRE_INTERVAL: [1.6, 3.2], // s (min, max)
+  ENEMY_FIRE_INTERVAL: [1.6, 3.2],
   LIVES: 3,
-  PLAYER_INV_TIME: 1.5, // s invulnerable tras ser golpeado
-  PLAYER_IMG_SRC: "https://robodacta-steam.mx/wp-content/uploads/2025/08/NaveSMEAT.png", // ← Reemplaza por tu imagen (ruta absoluta o relativa)
+  PLAYER_INV_TIME: 1.5,
+  PLAYER_IMG_SRC: "https://robodacta-steam.mx/wp-content/uploads/2025/08/NaveSMEAT.png", // ← cambia a tu PNG de SMEAT
 };
 
 /****************
@@ -84,33 +95,48 @@ const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 let DPR = Math.max(1, Math.floor(window.devicePixelRatio || 1));
 
-// Escalar para HiDPI
 function scaleCanvas(){
   DPR = Math.max(1, Math.floor(window.devicePixelRatio || 1));
   const { CANVAS_W: w, CANVAS_H: h } = CONFIG;
   canvas.width = w * DPR; canvas.height = h * DPR;
-  canvas.style.width = w + 'px'; canvas.style.height = h + 'px';
+  canvas.style.width = '100%'; // responsivo: el contenedor decide
+  const ratio = w/h; // asegura altura en función del ancho disponible
+  const cssW = canvas.getBoundingClientRect().width;
+  const cssH = Math.min(window.innerHeight*0.78, cssW/ratio);
+  canvas.style.height = cssH + 'px';
   ctx.setTransform(DPR,0,0,DPR,0,0);
 }
+
+// Llama al escalar y al cambiar de orientación/tamaño
 scaleCanvas();
+window.addEventListener('resize', ()=>{ applyResponsiveSettings(); scaleCanvas(); if(state!==STATE.PLAY){ // re-forma enemigos si no estás jugando
+  enemies = createEnemyFormation(); }
+});
 
 const KEYS = { left:false, right:false, shoot:false, start:false, pause:false, restart:false };
 
-// Previene scroll con flechas/espacio
+// Previene scroll con gestos en móviles sobre el canvas y botones
+['touchstart','touchmove','touchend'].forEach(type=>{
+  window.addEventListener(type, (e)=>{
+    if(e.target.closest('#game') || e.target.closest('.touch-controls')) e.preventDefault();
+  }, { passive:false });
+});
+window.addEventListener('contextmenu', e=>{ if(e.target.closest('#game') || e.target.closest('.touch-controls')) e.preventDefault(); });
+
+// Teclado (desktop)
 window.addEventListener('keydown', (e)=>{
   if(['ArrowLeft','ArrowRight','Space','KeyX'].includes(e.code)) e.preventDefault();
   if(e.code==='ArrowLeft') KEYS.left=true;
   if(e.code==='ArrowRight') KEYS.right=true;
-  if(e.code==='KeyX') KEYS.shoot=true;
+  if(e.code==='KeyX' || e.code==='Space') KEYS.shoot=true;
   if(e.code==='Enter') KEYS.start=true;
   if(e.code==='KeyP') KEYS.pause=true;
-  if(e.code==='KeyR') KEYS.restart=true;
-  if(e.code==='KeyR') runTests();
+  if(e.code==='KeyR') KEYS.restart=true; // Reiniciar con R
 });
 window.addEventListener('keyup', (e)=>{
   if(e.code==='ArrowLeft') KEYS.left=false;
   if(e.code==='ArrowRight') KEYS.right=false;
-  if(e.code==='KeyX') KEYS.shoot=false;
+  if(e.code==='KeyX' || e.code==='Space') KEYS.shoot=false;
   if(e.code==='Enter') KEYS.start=false;
   if(e.code==='KeyP') KEYS.pause=false;
   if(e.code==='KeyR') KEYS.restart=false;
@@ -119,49 +145,61 @@ window.addEventListener('keyup', (e)=>{
 /***************************
  * SPRITE DEL JUGADOR (IMG) *
  ***************************/
-// Estados: 'empty' | 'loading' | 'ready' | 'error'
 let playerSpriteState = 'empty';
 const playerImg = new Image();
-playerImg.crossOrigin = 'anonymous'; // permite usar imágenes con CORS y evitar tainting (si el servidor lo permite)
+playerImg.crossOrigin = 'anonymous';
 
 function isPlayerDrawable(){
-  // No llames drawImage a menos que el recurso esté decodificado y con dimensiones válidas
   return playerSpriteState === 'ready' && playerImg.complete && playerImg.naturalWidth > 0 && playerImg.naturalHeight > 0;
 }
 
 function setPlayerImage(src){
   playerSpriteState = 'loading';
   playerImg.onload = ()=>{
-    // decode() garantiza que el frame esté listo para pintar (donde esté soportado)
     const doReady = ()=>{ playerSpriteState = (playerImg.naturalWidth>0) ? 'ready' : 'error'; };
-    if (playerImg.decode) {
-      playerImg.decode().then(doReady).catch(()=>{ playerSpriteState='ready'; /* algunos navegadores rechazan sin motivo válido */ });
-    } else {
-      doReady();
-    }
+    if (playerImg.decode) playerImg.decode().then(doReady).catch(()=>{ playerSpriteState='ready'; });
+    else doReady();
   };
   playerImg.onerror = ()=>{ playerSpriteState = 'error'; };
   try { playerImg.src = src || ''; } catch(e) { playerSpriteState = 'error'; }
 }
-
-// Carga inicial (el usuario puede reemplazarla)
 setPlayerImage(CONFIG.PLAYER_IMG_SRC);
 
 // Estados generales del juego
 const STATE = { MENU:'menu', PLAY:'play', PAUSE:'pause', WIN:'win', LOSE:'lose' };
 let state = STATE.MENU;
-let lastTime = 0;
-let time = 0;
+let lastTime = 0; let time = 0;
 
 // Entidades
 let player, bullets, enemies, enemyBullets, particles, lives, score, nextEnemyShotAt;
+
+/****************************
+ * RESPONSIVE (enemigos)    *
+ ****************************/
+let lastBreakpoint = '';
+function getBreakpoint(){
+  const w = Math.min(window.innerWidth, document.documentElement.clientWidth || window.innerWidth);
+  if(w <= 360) return 'xs';
+  if(w <= 420) return 'sm';
+  if(w <= 540) return 'md';
+  return 'lg';
+}
+function applyResponsiveSettings(){
+  const bp = getBreakpoint();
+  if(bp === lastBreakpoint) return;
+  lastBreakpoint = bp;
+  if(bp==='xs'){ CONFIG.ENEMY_ROWS = 3; CONFIG.ENEMY_COLS = 5; }
+  else if(bp==='sm'){ CONFIG.ENEMY_ROWS = 3; CONFIG.ENEMY_COLS = 6; }
+  else if(bp==='md'){ CONFIG.ENEMY_ROWS = 4; CONFIG.ENEMY_COLS = 7; }
+  else { CONFIG.ENEMY_ROWS = 4; CONFIG.ENEMY_COLS = 8; }
+}
 
 function createEnemyFormation(){
   const arr = [];
   const ox = (CONFIG.CANVAS_W - (CONFIG.ENEMY_COLS-1)*CONFIG.ENEMY_SPACING_X)/2;
   for(let r=0;r<CONFIG.ENEMY_ROWS;r++){
     for(let c=0;c<CONFIG.ENEMY_COLS;c++){
-      const type = r===0 ? 'boss' : (r<=1 ? 'butterfly' : 'bee');
+      const type = r===0 ? 'boss' : (r<=1 ? 'butterfly' : 'bee'); // Tipos conservados; dibujados como contaminantes
       arr.push({
         baseX: ox + c*CONFIG.ENEMY_SPACING_X,
         baseY: CONFIG.ENEMY_START_Y + r*CONFIG.ENEMY_SPACING_Y,
@@ -178,45 +216,20 @@ function scheduleNextEnemyShot(){
   nextEnemyShotAt = time + (a + Math.random()*(b-a));
 }
 
-// Inicialización segura ANTES del primer draw()
 (function initSafe(){
-  lives = CONFIG.LIVES;
-  score = 0;
-  player = {
-    x: (CONFIG.CANVAS_W-CONFIG.PLAYER_W)/2,
-    y: CONFIG.CANVAS_H - CONFIG.PLAYER_H - 16,
-    w: CONFIG.PLAYER_W,
-    h: CONFIG.PLAYER_H,
-    speed: CONFIG.PLAYER_SPEED,
-    canShoot: true,
-    shootCooldown: 0.18,
-    shootTimer: 0,
-    inv: 0,
-  };
-  bullets = [];
-  enemyBullets = [];
-  particles = [];
+  applyResponsiveSettings();
+  lives = CONFIG.LIVES; score = 0;
+  player = { x:(CONFIG.CANVAS_W-CONFIG.PLAYER_W)/2, y:CONFIG.CANVAS_H-CONFIG.PLAYER_H-16, w:CONFIG.PLAYER_W, h:CONFIG.PLAYER_H, speed:CONFIG.PLAYER_SPEED, canShoot:true, shootCooldown:0.18, shootTimer:0, inv:0 };
+  bullets = []; enemyBullets = []; particles = [];
   enemies = createEnemyFormation();
   scheduleNextEnemyShot();
 })();
 
 function resetGame(){
-  lives = CONFIG.LIVES;
-  score = 0;
-  player = {
-    x: (CONFIG.CANVAS_W-CONFIG.PLAYER_W)/2,
-    y: CONFIG.CANVAS_H - CONFIG.PLAYER_H - 16,
-    w: CONFIG.PLAYER_W,
-    h: CONFIG.PLAYER_H,
-    speed: CONFIG.PLAYER_SPEED,
-    canShoot: true,
-    shootCooldown: 0.18,
-    shootTimer: 0,
-    inv: 0, // tiempo de invulnerabilidad restante
-  };
-  bullets = [];
-  enemyBullets = [];
-  particles = [];
+  applyResponsiveSettings();
+  lives = CONFIG.LIVES; score = 0;
+  player = { x:(CONFIG.CANVAS_W-CONFIG.PLAYER_W)/2, y:CONFIG.CANVAS_H-CONFIG.PLAYER_H-16, w:CONFIG.PLAYER_W, h:CONFIG.PLAYER_H, speed:CONFIG.PLAYER_SPEED, canShoot:true, shootCooldown:0.18, shootTimer:0, inv:0 };
+  bullets = []; enemyBullets = []; particles = [];
   enemies = createEnemyFormation();
   scheduleNextEnemyShot();
 }
@@ -225,41 +238,29 @@ function resetGame(){
  * BUCLE JUEGO  *
  ****************/
 function loop(ts){
-  const secs = ts/1000;
-  const dt = Math.min(0.033, secs - lastTime);
-  lastTime = secs; time += dt;
-
-  if(state===STATE.PAUSE){ draw(); requestAnimationFrame(loop); return; }
-  if(state===STATE.MENU || state===STATE.WIN || state===STATE.LOSE){ draw(); requestAnimationFrame(loop); return; }
-
-  update(dt);
-  draw();
-  requestAnimationFrame(loop);
+  const secs = ts/1000; const dt = Math.min(0.033, secs - lastTime); lastTime = secs; time += dt;
+  if(state===STATE.PAUSE || state===STATE.MENU || state===STATE.WIN || state===STATE.LOSE){ draw(); requestAnimationFrame(loop); return; }
+  update(dt); draw(); requestAnimationFrame(loop);
 }
 requestAnimationFrame(loop);
 
 function update(dt){
-  // Input: mover jugador
   if(KEYS.left) player.x -= player.speed*dt;
   if(KEYS.right) player.x += player.speed*dt;
   player.x = Math.max(0, Math.min(CONFIG.CANVAS_W - player.w, player.x));
 
-  // Disparo jugador
   player.shootTimer -= dt;
   if(KEYS.shoot && player.shootTimer<=0 && bullets.length < CONFIG.PLAYER_MAX_BULLETS){
     bullets.push({x: player.x + player.w/2 - 2, y: player.y - 8, w:4, h:10, vy: CONFIG.PLAYER_BULLET_SPEED});
     player.shootTimer = player.shootCooldown;
   }
 
-  // Balas jugador
   bullets.forEach(b=> b.y += b.vy*dt);
   bullets = bullets.filter(b => b.y + b.h > 0);
 
-  // Formación enemiga (oscilación)
   const oscX = Math.sin(time*CONFIG.ENEMY_OSC_SPEED)*CONFIG.ENEMY_OSC_AMPL;
   enemies.forEach(e=>{ e.t += dt*2; e.x = e.baseX + oscX + Math.sin(e.t)*6; e.y = e.baseY + Math.sin(time*0.7 + e.baseX*0.03)*2; });
 
-  // Disparo enemigo ocasional
   if(time >= nextEnemyShotAt){
     const alive = enemies.filter(e=>e.alive);
     if(alive.length){
@@ -269,16 +270,14 @@ function update(dt){
     scheduleNextEnemyShot();
   }
 
-  // Balas enemigos
   enemyBullets.forEach(b=> b.y += b.vy*dt);
   enemyBullets = enemyBullets.filter(b => b.y < CONFIG.CANVAS_H+16);
 
-  // Colisiones: balas jugador ↔ enemigos
   bullets.forEach(b=>{
     enemies.forEach(e=>{
       if(!e.alive) return;
       if(rectsOverlap(b, e)){
-        e.alive = false; b.y = -9999; // marca para eliminar
+        e.alive = false; b.y = -9999;
         score += e.type==='boss'? 160 : e.type==='butterfly'? 120 : 80;
         spawnExplosion(e.x+e.w/2, e.y+e.h/2, e.type);
       }
@@ -286,32 +285,15 @@ function update(dt){
   });
   bullets = bullets.filter(b => b.y>-50);
 
-  // Colisiones: jugador ↔ balas enemigas
   if(player.inv>0) player.inv -= dt;
-  enemyBullets.forEach(b=>{
-    if(player.inv<=0 && rectsOverlap(b, player)){
-      b.y = CONFIG.CANVAS_H+999; // remove
-      damagePlayer();
-    }
-  });
+  enemyBullets.forEach(b=>{ if(player.inv<=0 && rectsOverlap(b, player)){ b.y = CONFIG.CANVAS_H+999; damagePlayer(); } });
 
-  // Colisión: jugador ↔ enemigos (choque)
-  enemies.forEach(e=>{
-    if(e.alive && player.inv<=0 && rectsOverlap(e, player)){
-      e.alive=false; spawnExplosion(e.x+e.w/2, e.y+e.h/2, e.type);
-      damagePlayer();
-    }
-  });
+  enemies.forEach(e=>{ if(e.alive && player.inv<=0 && rectsOverlap(e, player)){ e.alive=false; spawnExplosion(e.x+e.w/2, e.y+e.h/2, e.type); damagePlayer(); } });
 
-  // Partículas
   particles.forEach(p=>{ p.life -= dt; p.x += p.vx*dt; p.y += p.vy*dt; p.vx*=0.99; p.vy+=40*dt; });
   particles = particles.filter(p=> p.life>0);
 
-  // Win/Lose
-  if(enemies.every(e=>!e.alive)){
-    state = STATE.WIN;
-    fireComplete('win', { score });
-  }
+  if(enemies.every(e=>!e.alive)){ state = STATE.WIN; fireComplete('win', { score }); }
 }
 
 function damagePlayer(){
@@ -324,58 +306,48 @@ function damagePlayer(){
  * DIBUJO  *
  ***********/
 function draw(){
-  // Fondo
   ctx.fillStyle = '#000'; ctx.fillRect(0,0,CONFIG.CANVAS_W,CONFIG.CANVAS_H);
   drawStarfield();
 
-  // Enemigos
   enemies.forEach(e=>{ if(e.alive) drawEnemy(e); });
 
-  // Jugador
   if(state!==STATE.MENU){
     const blink = player.inv>0 && Math.floor(time*10)%2===0;
     if(!blink){
       if(isPlayerDrawable()){
-        // drawImage solo cuando la imagen está lista y válida
         try { ctx.drawImage(playerImg, player.x, player.y, player.w, player.h); }
-        catch { /* fallback hard */ ctx.fillStyle = '#60a5fa'; ctx.fillRect(player.x, player.y, player.w, player.h); }
+        catch { ctx.fillStyle = '#60a5fa'; ctx.fillRect(player.x, player.y, player.w, player.h); }
       } else {
-        // Fallback visible si la imagen no está lista o falló
         ctx.fillStyle = (playerSpriteState==='error') ? '#f59e0b' : '#60a5fa';
         ctx.fillRect(player.x, player.y, player.w, player.h);
-        // Opcional: indicar estado con un ícono simple
-        ctx.fillStyle = '#0b1220';
-        ctx.font = 'bold 10px system-ui,Segoe UI,Inter';
+        ctx.fillStyle = '#0b1220'; ctx.font = 'bold 10px system-ui,Segoe UI,Inter';
         ctx.fillText(playerSpriteState==='error' ? '⚠' : '…', player.x+player.w/2-3, player.y+player.h/2+3);
       }
     }
   }
 
-  // Balas
   ctx.fillStyle = '#93c5fd'; bullets.forEach(b=> ctx.fillRect(b.x, b.y, b.w, b.h));
   ctx.fillStyle = '#fca5a5'; enemyBullets.forEach(b=> ctx.fillRect(b.x, b.y, b.w, b.h));
 
-  // Partículas
   particles.forEach(p=>{ ctx.globalAlpha = Math.max(0, p.life/p.maxLife); ctx.fillStyle = p.color; ctx.fillRect(p.x, p.y, 2, 2); ctx.globalAlpha = 1; });
 
-  // HUD
   drawHUD();
 
-  // Overlays
-  if(state===STATE.MENU){ drawCenterText('GALAGA (1 nivel)\nEnter para comenzar', 22, '#e5e7eb'); }
-  if(state===STATE.WIN){ drawCenterText('¡GANASTE!\nR para reiniciar', 24, '#a7f3d0'); }
-  if(state===STATE.LOSE){ drawCenterText('GAME OVER\nR para reiniciar', 24, '#fecaca'); }
+  if(state===STATE.MENU){ drawCenterText('SMEAT vs Contaminantes\nEnter o Tocar Iniciar', 22, '#e5e7eb'); }
+  if(state===STATE.WIN){ drawCenterText('¡GANASTE!\nPresiona R o ↻ para reiniciar', 24, '#a7f3d0'); }
+  if(state===STATE.LOSE){ drawCenterText('GAME OVER\nPresiona R o ↻ para reiniciar', 24, '#fecaca'); }
   if(state===STATE.PAUSE){ drawCenterText('P A U S A', 26, '#eab308'); }
 }
 
 function drawHUD(){
   ctx.fillStyle = '#cbd5e1'; ctx.font = '14px system-ui,Segoe UI,Inter'; ctx.textBaseline = 'top';
-  ctx.fillText('Puntos: '+(score|0), 12, 10);
-  // Vidas
-  for(let i=0;i<lives;i++){
-    ctx.fillStyle = '#22c55e'; ctx.fillRect(200 + i*14, 12, 10, 10);
-  }
-  ctx.fillStyle = '#94a3b8'; ctx.fillText('Nivel 1', CONFIG.CANVAS_W-70, 10);
+  const scoreText = 'Puntos: '+(score|0);
+  ctx.fillText(scoreText, 12, 10);
+  // Vidas como corazones (alineados a la derecha)
+  const s = 14, gap = 6; const totalW = CONFIG.LIVES * s + (CONFIG.LIVES-1)*gap;
+  let x = CONFIG.CANVAS_W - totalW - 12; const y = 12;
+  for(let i=0;i<lives;i++){ drawHeart(x, y, s, '#ef4444'); x += s + gap; }
+  ctx.fillStyle = '#94a3b8'; ctx.fillText('Vidas', CONFIG.CANVAS_W-70, 28);
 }
 
 // Estrellas de fondo animadas
@@ -383,11 +355,7 @@ const stars = Array.from({length:120}, () => ({ x: Math.random()*CONFIG.CANVAS_W
 function drawStarfield(){
   ctx.fillStyle = '#0b1220'; ctx.fillRect(0,0,CONFIG.CANVAS_W,CONFIG.CANVAS_H);
   ctx.fillStyle = '#ffffff';
-  stars.forEach(st=>{
-    st.y += st.s*0.8; if(st.y>CONFIG.CANVAS_H) st.y = -2;
-    ctx.globalAlpha = 0.6 + 0.4*Math.random();
-    ctx.fillRect(st.x, st.y, 1, 1);
-  });
+  stars.forEach(st=>{ st.y += st.s*0.8; if(st.y>CONFIG.CANVAS_H) st.y = -2; ctx.globalAlpha = 0.6 + 0.4*Math.random(); ctx.fillRect(st.x, st.y, 1, 1); });
   ctx.globalAlpha = 1;
 }
 
@@ -398,69 +366,110 @@ function drawCenterText(txt, size=18, color='#fff'){
   ctx.textAlign='start'; ctx.textBaseline='alphabetic';
 }
 
+// DIBUJOS DE CONTAMINANTES (manteniendo tipos)
 function drawEnemy(e){
   ctx.save(); ctx.translate(e.x+e.w/2, e.y+e.h/2);
-  const color = e.type==='boss'? '#f43f5e' : e.type==='butterfly'? '#f59e0b' : '#22c55e';
-  ctx.fillStyle = color; ctx.strokeStyle = '#0a0a0a'; ctx.lineWidth = 1;
-  ctx.beginPath();
+  ctx.lineWidth = 1; ctx.strokeStyle = '#0a0a0a';
   if(e.type==='bee'){
-    // Abeja: cuerpo trapezoidal + alas
-    poly([[-12,8],[12,8],[8,-2],[-8,-2]]);
-    ctx.fill();
-    ctx.beginPath(); poly([[-14,-4],[-2,-8],[-2,-2],[-14,-2]]); ctx.fill();
-    ctx.beginPath(); poly([[14,-4],[2,-8],[2,-2],[14,-2]]); ctx.fill();
-    ctx.fillStyle = '#fff'; ctx.fillRect(-3,-1,6,2);
+    // LATA
+    const w=18,h=22; ctx.fillStyle = '#9ca3af';
+    roundRect(-w/2,-h/2,w,h,4,true,false);
+    ctx.fillStyle = '#d1d5db'; ctx.fillRect(-w/2+2,-h/2+2,w-4,3);
+    ctx.fillRect(-w/2+2,h/2-5,w-4,3);
+    ctx.fillStyle = '#111827'; ctx.fillRect(-2,-h/2+4,4,2);
   } else if(e.type==='butterfly'){
-    // Mariposa: alas curvas
-    ctx.beginPath(); ctx.moveTo(0,-10); ctx.quadraticCurveTo(-18,-8,-12,4); ctx.quadraticCurveTo(-4,10,0,4);
-    ctx.quadraticCurveTo(4,10,12,4); ctx.quadraticCurveTo(18,-8,0,-10); ctx.closePath(); ctx.fill();
-    ctx.fillStyle = '#1e293b'; ctx.fillRect(-2,-2,4,4);
+    // BOTELLA
+    ctx.fillStyle = '#60a5fa';
+    ctx.beginPath(); ctx.moveTo(-7,10); ctx.lineTo(7,10); ctx.quadraticCurveTo(9,4,3,2); ctx.lineTo(3,-6); ctx.quadraticCurveTo(3,-10,-3,-10); ctx.lineTo(-3,2); ctx.quadraticCurveTo(-9,4,-7,10); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#1e293b'; ctx.fillRect(-3,-9,6,3);
   } else {
-    // Boss: nave grande
-    ctx.beginPath(); poly([[-14,10],[14,10],[10,-6],[0,-10],[-10,-6]]); ctx.fill();
-    ctx.fillStyle = '#fde68a'; ctx.fillRect(-3,-6,6,3);
+    // BOLSA DE BASURA
+    ctx.fillStyle = '#374151';
+    ctx.beginPath(); ctx.moveTo(0,-10); ctx.quadraticCurveTo(6,-12,8,-6); ctx.quadraticCurveTo(10,-2,10,4); ctx.quadraticCurveTo(0,12,-10,4); ctx.quadraticCurveTo(-10,-2,-8,-6); ctx.quadraticCurveTo(-6,-12,0,-10); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#9ca3af'; ctx.fillRect(-2,-10,4,3);
   }
   ctx.restore();
+}
 
-  function poly(pts){
-    ctx.moveTo(pts[0][0], pts[0][1]); for(let i=1;i<pts.length;i++) ctx.lineTo(pts[i][0], pts[i][1]); ctx.closePath();
-  }
+function roundRect(x,y,w,h,r,fill,stroke){
+  if (r>Math.min(w,h)/2) r=Math.min(w,h)/2;
+  ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath();
+  if(fill) ctx.fill(); if(stroke) ctx.stroke();
+}
+
+function drawHeart(x,y,size,color){
+  const s = size; ctx.save(); ctx.translate(x, y);
+  ctx.beginPath(); ctx.moveTo(s*0.5, s*0.35);
+  ctx.bezierCurveTo(s*0.5, 0, 0, 0, 0, s*0.35);
+  ctx.bezierCurveTo(0, s*0.62, s*0.25, s*0.78, s*0.5, s);
+  ctx.bezierCurveTo(s*0.75, s*0.78, s, s*0.62, s, s*0.35);
+  ctx.bezierCurveTo(s, 0, s*0.5, 0, s*0.5, s*0.35);
+  ctx.closePath(); ctx.fillStyle = color || '#ef4444'; ctx.fill(); ctx.restore();
 }
 
 /****************
  * UTILIDADES   *
  ****************/
-function rectsOverlap(a,b){
-  return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
-}
-
+function rectsOverlap(a,b){ return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y; }
 function spawnExplosion(x,y,type){
   const n = 20; const color = type==='player'? '#93c5fd' : (type==='boss'? '#fecaca' : '#fde68a');
-  for(let i=0;i<n;i++){
-    particles.push({ x, y, vx:(Math.random()*120-60), vy:(Math.random()*-120), life: Math.random()*0.6+0.25, maxLife: 0.8, color });
-  }
+  for(let i=0;i<n;i++) particles.push({ x, y, vx:(Math.random()*120-60), vy:(Math.random()*-120), life: Math.random()*0.6+0.25, maxLife: 0.8, color });
 }
 
 /****************
  * ENTRADAS UI  *
  ****************/
 const btnStart = document.getElementById('btnStart');
-const btnTest  = document.getElementById('btnTest');
 btnStart.addEventListener('click', ()=>{ if(state===STATE.MENU || state===STATE.LOSE || state===STATE.WIN){ startGame(); }});
-btnTest.addEventListener('click', runTests);
 
 window.addEventListener('blur', ()=>{ if(state===STATE.PLAY) state = STATE.PAUSE; });
-window.addEventListener('focus', ()=>{ /* nada */ });
 
 function startGame(){ resetGame(); state = STATE.PLAY; }
 
-// Teclas de estado
+// Hotkeys de estado
 setInterval(()=>{
   if(KEYS.start && (state===STATE.MENU || state===STATE.WIN || state===STATE.LOSE)) startGame();
   if(KEYS.pause && state===STATE.PLAY){ state=STATE.PAUSE; KEYS.pause=false; }
   else if(KEYS.pause && state===STATE.PAUSE){ state=STATE.PLAY; KEYS.pause=false; }
-  if(KEYS.restart && (state===STATE.LOSE || state===STATE.WIN)){ resetGame(); state=STATE.PLAY; KEYS.restart=false; }
+  // Reiniciar con R en cualquier estado
+  if(KEYS.restart){ resetGame(); state=STATE.PLAY; KEYS.restart=false; }
 }, 50);
+
+/********************
+ * CONTROLES TÁCTILES
+ ********************/
+const btnLeft  = document.getElementById('btnLeft');
+const btnRight = document.getElementById('btnRight');
+const btnFire  = document.getElementById('btnFire');
+const btnRestart = document.getElementById('btnRestart');
+
+// Reinicio táctil/ratón sin depender de 'click' (que puede anularse por preventDefault en touch)
+function bindRestart(btn){
+  if(!btn) return;
+  let lastTs = 0;
+  const go = (e)=>{
+    e.preventDefault();
+    const now = performance.now();
+    if(now - lastTs < 220) return; // evita dobles por eventos duplicados
+    lastTs = now;
+    resetGame();
+    state = STATE.PLAY;
+    try { if(navigator.vibrate) navigator.vibrate(10); } catch(_) {}
+  };
+  // Usamos pointerdown (moderno) + fallbacks
+  btn.addEventListener('pointerdown', go, {passive:false});
+  btn.addEventListener('touchstart', go, {passive:false});
+  btn.addEventListener('mousedown', go, {passive:false});
+}
+
+function bindHold(btn, key){
+  const down = (e)=>{ e.preventDefault(); KEYS[key]=true; };
+  const up   = (e)=>{ e.preventDefault(); KEYS[key]=false; };
+  ['pointerdown','touchstart','mousedown'].forEach(ev=> btn.addEventListener(ev, down, {passive:false}));
+  ['pointerup','pointercancel','touchend','touchcancel','mouseup','mouseleave'].forEach(ev=> btn.addEventListener(ev, up, {passive:false}));
+}
+if(btnLeft && btnRight && btnFire){ bindHold(btnLeft,'left'); bindHold(btnRight,'right'); bindHold(btnFire,'shoot'); }
+bindRestart(btnRestart);
 
 /****************
  * INTEGRACIÓN  *
@@ -468,57 +477,7 @@ setInterval(()=>{
 function fireComplete(kind, extra={}){
   const ev = new CustomEvent('galagaEvent', { detail: { kind, ...extra }});
   document.dispatchEvent(ev);
-  // Ejemplo opcional: auto-marcar completado en LearnDash
-  // const b = document.querySelector('.learndash_mark_complete_button');
-  // if(kind==='win' && b) b.click();
 }
-
-/****************
- * PRUEBAS (T)  *
- * Mini test-cases para validar lo básico sin romper nada.
- ****************/
-function runTests(){
-  const results = [];
-  const assert = (name, cond) => results.push({ name, pass: !!cond });
-  const noThrow = (fn) => { try{ fn(); return true; } catch(e){ console.error(e); return false; } };
-
-  // 1) La formación debe tener filas*columnas
-  const formed = createEnemyFormation();
-  assert('createEnemyFormation tamaño correcto', formed.length === CONFIG.ENEMY_ROWS*CONFIG.ENEMY_COLS);
-
-  // 2) draw() no debe lanzar en MENU con estado inicial
-  const prevState = state; state = STATE.MENU;
-  assert('draw() en MENU no lanza', noThrow(()=> draw()));
-  state = prevState;
-
-  // 3) Colisión bala-enemigo elimina enemigo y suma score
-  resetGame(); state = STATE.PLAY;
-  const target = enemies.find(e=>e.alive);
-  bullets.push({ x: target.baseX+target.w/2-2, y: target.baseY, w:4, h:10, vy: -10 });
-  const preScore = score;
-  noThrow(()=> update(0.016));
-  assert('enemigo impactado muere', enemies.filter(e=>e.alive).length === CONFIG.ENEMY_ROWS*CONFIG.ENEMY_COLS - 1);
-  assert('score aumentó', score > preScore);
-
-  // 4) startGame() coloca estado en PLAY sin error
-  state = STATE.MENU; noThrow(()=> startGame());
-  assert('startGame pone PLAY', state === STATE.PLAY);
-
-  // 5) draw() no llama a drawImage si sprite está 'error' o no listo
-  const oldState = playerSpriteState;
-  playerSpriteState = 'error';
-  assert('draw() con sprite error no lanza', noThrow(()=> draw()));
-  playerSpriteState = 'loading';
-  assert('draw() con sprite loading no lanza', noThrow(()=> draw()));
-  playerSpriteState = oldState;
-
-  // Log & UI
-  const ok = results.every(r=>r.pass);
-  console.log('%cPRUEBAS GALAGA','background:#111;color:#fff;padding:4px 8px;border-radius:6px');
-  results.forEach(r=> console.log(`${r.pass ? '✅' : '❌'} ${r.name}`));
-  drawCenterText(ok? 'PRUEBAS OK' : 'PRUEBAS FALLAN', 22, ok? '#22c55e' : '#ef4444');
-}
-
 </script>
 </body>
 </html>
