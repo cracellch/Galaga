@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Galaga • HTML (1 nivel)</title>
+<title>SMEAT vs </title>
 <style>
   :root{
     --bg: #0a0f1d; --panel:#0d1426; --ink:#c7d2fe; --accent:#60a5fa; --warn:#f59e0b; --danger:#ef4444; --good:#22c55e;
@@ -27,15 +27,14 @@
   <div class="card">
     <div class="bar">
       <h1>Galaga • HTML (1 nivel)</h1>
-      <div class="hint">Controles: <span class="kbd">← →</span> mover · <span class="kbd">X</span> disparar · <span class="kbd">Enter</span> iniciar · <span class="kbd">R</span> reiniciar · <span class="kbd">P</span> pausa · <span class="kbd">T</span> pruebas</div>
+      <div class="hint">Controles: <span class="kbd">← →</span> mover · <span class="kbd">X</span> disparar · <span class="kbd">Enter</span> iniciar · <span class="kbd">R</span> reiniciar · <span class="kbd">P</span> pausa</div>
     </div>
     <canvas id="game" width="480" height="640"></canvas>
     <div class="footer">
       <div style="display:flex;gap:8px;align-items:center">
         <button id="btnStart" class="btn">Iniciar</button>
-        <button id="btnTest" class="btn" title="Ejecuta pruebas rápidas">Probar</button>
+        <button id="btnTest" class="btn" title="Ejecuta pruebas rápidas">Reiniciar</button>
       </div>
-      <div class="hint">Cambia la imagen del jugador en <code>PLAYER_IMG_SRC</code> (PNG transparente recomendado, 48×48). Si falla la carga, se usa un fallback dibujado.</div>
     </div>
   </div>
 </div>
@@ -59,8 +58,8 @@ const CONFIG = {
   CANVAS_W: 480,
   CANVAS_H: 640,
   PLAYER_SPEED: 260, // px/s
-  PLAYER_W: 48,
-  PLAYER_H: 48,
+  PLAYER_W: 90,
+  PLAYER_H: 90,
   PLAYER_BULLET_SPEED: -520,
   PLAYER_MAX_BULLETS: 2, // Galaga clásico limita; puedes subirlo a 3
   ENEMY_ROWS: 4,
@@ -106,7 +105,7 @@ window.addEventListener('keydown', (e)=>{
   if(e.code==='Enter') KEYS.start=true;
   if(e.code==='KeyP') KEYS.pause=true;
   if(e.code==='KeyR') KEYS.restart=true;
-  if(e.code==='KeyT') runTests();
+  if(e.code==='KeyR') runTests();
 });
 window.addEventListener('keyup', (e)=>{
   if(e.code==='ArrowLeft') KEYS.left=false;
