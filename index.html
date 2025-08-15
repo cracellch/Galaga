@@ -8,27 +8,126 @@
   :root{
     --bg:#0a0f1d; --panel:#0d1426; --ink:#c7d2fe; --accent:#60a5fa; --warn:#f59e0b; --danger:#ef4444; --good:#22c55e;
   }
-  h1{
-      display:none;
-  }
   *{box-sizing:border-box}
   body{margin:0;background:radial-gradient(1200px 500px at 50% 20%,#0f1a33,#070b16);color:var(--ink);font-family:system-ui,Segoe UI,Inter,Roboto,sans-serif}
-  .wrap{max-width:900px;margin:0 auto;padding:16px;margin-top:-60px;}
-  .card{background:linear-gradient(180deg,#0b1120,#0a0f1d);border:1px solid #1f2a44;border-radius:16px;padding:16px;box-shadow:0 10px 40px rgba(0,0,0,.35)}
+  .wrap{max-width:900px;margin:0 auto;padding:16px}
+  .card{background:linear-gradient(180deg,#0b1120,#0a0f1d);border:1px solid #1f2a44;border-radius:16px;padding:16px;box-shadow:0 10px 40px rgba(0,0,0,.35);position:relative;overflow:hidden}
   h1{margin:0 0 8px 0;font-size:18px;letter-spacing:.4px}
   .bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:space-between;margin-bottom:12px}
   .hint{font-size:12px;color:#94a3b8}
   #game{display:block;width:100%;height:auto;max-height:78vh;background:#000;border-radius:12px;border:1px solid #1f2a44;touch-action:none;}
-  .footer{display:flex;justify-content:space-between;align-items:center;margin-top:10px}
-  .btn{appearance:none;background:#0f172a;border:1px solid #1f2a44;color:#e5e7eb;border-radius:10px;padding:8px 12px;cursor:pointer}
-  .btn:hover{border-color:#334155}
+
+  /* Overlay de dificultad */
+  .overlay{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    background:radial-gradient(100% 100% at 50% 0%, rgba(30,41,59,.9), rgba(2,6,23,.92));
+    backdrop-filter: blur(6px);
+    z-index: 30;
+  }
+  .overlay-inner{
+    width:min(720px,90vw);
+    background:linear-gradient(180deg,#0b1222,#0b1020);
+    border:1px solid #243148; border-radius:16px; padding:18px;
+    box-shadow:0 20px 60px rgba(0,0,0,.5);
+  }
+  .ov-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+  .ov-title{font-size:18px;font-weight:800;color:#e5e7eb;letter-spacing:.3px}
+  .ov-sub{font-size:12px;color:#94a3b8}
+  .grid{display:grid;grid-template-columns:1fr 1fr; gap:14px}
+  @media (max-width:640px){ .grid{grid-template-columns:1fr} }
+  .card-diff{
+    border:1px solid #26334c; border-radius:14px; padding:14px; background:linear-gradient(180deg,#0b1224,#0a0f1d);
+    display:grid; grid-template-columns:auto 1fr; gap:12px; align-items:center; cursor:pointer; position:relative;
+    transition:transform .12s ease, border-color .2s ease, box-shadow .2s ease;
+  }
+  .card-diff:hover{ transform: translateY(-2px); border-color:#36517f; box-shadow:0 10px 30px rgba(31,41,55,.35) }
+  .card-diff.active{ border-color:#60a5fa; box-shadow:0 16px 40px rgba(96,165,250,.25) }
+  .badge{
+    display:inline-flex; align-items:center; gap:6px; font-size:12px; padding:4px 8px; border-radius:999px; border:1px solid #25314a;
+    background:linear-gradient(180deg,#0b1426,#0a1020); color:#cbd5e1;
+  }
+  .badge .dot{width:8px;height:8px;border-radius:999px}
+  .dot-easy{background:#22c55e}
+  .dot-hard{background:#ef4444}
+  .cd-title{font-weight:800;color:#e2e8f0;margin-bottom:2px}
+  .cd-desc{font-size:12px;color:#99a7c4;line-height:1.5}
+  .cd-illus{width:48px;height:48px;display:grid;place-items:center;border-radius:12px;background:#0b1426;border:1px solid #26334c}
+  .row-actions{display:flex;justify-content:space-between;align-items:center;margin-top:14px}
+  .btn{appearance:none;background:#0f172a;border:1px solid #1f2a44;color:#e5e7eb;border-radius:10px;padding:10px 14px;cursor:pointer;font-weight:700}
+  .btn[disabled]{opacity:.55;cursor:not-allowed}
+  .btn-ghost{background:transparent}
+  .btn-primary{background:linear-gradient(180deg,#1d4ed8,#1e40af);border-color:#3653bb}
   .kbd{display:inline-flex;gap:6px;align-items:center;background:#0b1222;border:1px solid #1f2a44;border-radius:8px;padding:4px 8px;font-size:12px;color:#a3b2d9}
+
   /* Controles táctiles */
-  .touch-controls{position:fixed;left:0;right:0;bottom:calc(10px + env(safe-area-inset-bottom));display:flex;justify-content:center;gap:20px;z-index:50;pointer-events:none}
+  .touch-controls{position:fixed;left:0;right:0;bottom:calc(10px + env(safe-area-inset-bottom));display:flex;justify-content:center;gap:20px;z-index:20;pointer-events:none}
   .ctl-btn{pointer-events:auto;width:64px;height:64px;border-radius:999px;border:1px solid #1f2a44;background:rgba(15,23,42,.7);backdrop-filter:blur(6px);color:#e5e7eb;font-size:22px;display:flex;align-items:center;justify-content:center}
   .ctl-btn.small{width:56px;height:56px;font-size:18px}
   .ctl-btn:active{transform:scale(.97)}
   @media (hover:hover) and (pointer:fine){ .touch-controls{display:none;} }
+  /* --- Overlay de dificultad: nunca desbordar --- */
+    #difficultyOverlay.overlay{
+      align-items: flex-start;
+      padding: 12px;
+      overflow-y: auto;                 /* si no cabe, que haga scroll */
+    }
+    
+    #difficultyOverlay .overlay-inner{
+      width: min(520px, 92vw);          /* que nunca sea más ancho que la pantalla */
+      max-height: calc(100vh - 24px);   /* que nunca sea más alto que la pantalla */
+      overflow: auto;                   /* scroll interno cuando haga falta */
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      box-sizing: border-box;           /* padding incluido en el ancho/alto */
+    }
+    
+    /* Una sola columna: Fácil arriba, Difícil abajo */
+    #difficultyOverlay .grid{
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+    
+    /* Tarjetas y textos siempre dentro del ancho */
+    #difficultyOverlay .card-diff{
+      width: 100%;
+      text-align: left;
+      white-space: normal;
+      word-break: break-word;
+    }
+    
+    /* Fila de acciones: que no se salga y se acomode */
+    #difficultyOverlay .row-actions{
+      display: flex;
+      flex-wrap: wrap;                  /* permite saltar de línea */
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+    }
+    
+    #difficultyOverlay .row-actions > *{
+      max-width: 100%;                  /* nada más ancho que el contenedor */
+    }
+    
+    #difficultyOverlay #btnBegin,
+    #difficultyOverlay #btnCancel{
+      min-width: 0;                     /* evita desbordes por min-width del tema */
+    }
+    
+    /* En móviles muy pequeños, apila los botones y que ocupen el ancho */
+    @media (max-width: 480px){
+      #difficultyOverlay .row-actions{
+        flex-direction: column-reverse; /* "Comenzar" abajo de todo */
+        align-items: stretch;
+      }
+      #difficultyOverlay #btnBegin,
+      #difficultyOverlay #btnCancel{
+        width: 100%;
+      }
+      #difficultyOverlay .ov-sub{ text-align: center; }
+    }
+
 </style>
 </head>
 <body>
@@ -36,16 +135,52 @@
   <div class="card">
     <div class="bar">
       <h1>SMEAT vs Contaminantes</h1>
-      <div class="hint">Controles: <span class="kbd">← →</span> Mover · <span class="kbd">X</span> Disparar · <span class="kbd">Enter</span> Iniciar · <span class="kbd">R</span> Reiniciar· <span class="kbd">P</span> Pausa</div>
+      <div class="hint">Controles: <span class="kbd">← →</span> Mover · <span class="kbd">X</span> Disparar · <span class="kbd">Enter</span> Iniciar · <span class="kbd">R</span> Reiniciar · <span class="kbd">P</span> Pausa</div>
     </div>
-    <canvas id="game" width="480" height="640"></canvas>
-    <div class="footer">
-      <div style="display:flex;gap:8px;align-items:center">
-        <button id="btnStart" class="btn">Iniciar</button>
+
+    <!-- Canvas -->
+    <canvas id="game" width="480" height="640" aria-label="Juego SMEAT"></canvas>
+
+    <!-- Overlay de selección de dificultad (se muestra al principio) -->
+    <div id="difficultyOverlay" class="overlay" role="dialog" aria-modal="true">
+      <div class="overlay-inner">
+        <div class="ov-head">
+          <div class="ov-title">Elige dificultad</div>
+          <div class="ov-sub">Puedes cambiarla y reiniciar cuando quieras.</div>
+        </div>
+
+        <div class="grid" id="diffGrid">
+          <button class="card-diff" data-mode="easy" aria-pressed="false">
+            <div class="cd-illus">🛡️</div>
+            <div>
+              <div class="cd-title">Fácil</div>
+              <div class="cd-desc">Enemigos disparan <b>recto hacia abajo</b>, menos balas y menor frecuencia. Ideal para explorar.</div>
+              <div class="badge" style="margin-top:6px"><span class="dot dot-easy"></span>Recomendado para empezar</div>
+            </div>
+          </button>
+
+          <button class="card-diff" data-mode="hard" aria-pressed="false">
+            <div class="cd-illus">🔥</div>
+            <div>
+              <div class="cd-title">Difícil</div>
+              <div class="cd-desc">Ráfagas en abanico que <b>apuntan al jugador</b>, balas más rápidas y mayor frecuencia.</div>
+              <div class="badge" style="margin-top:6px"><span class="dot dot-hard"></span>Desafío completo</div>
+            </div>
+          </button>
+        </div>
+
+        <div class="row-actions">
+          <div style="display:flex;gap:8px;align-items:center">
+              <span class="ov-sub" id="chosenText">Selecciona un modo</span>
+              <button id="btnBegin" class="btn btn-primary" type="button" disabled>Comenzar</button>
+          </div>
+        </div>
       </div>
     </div>
+
   </div>
 </div>
+
 <!-- Controles táctiles -->
 <div class="touch-controls" id="touchControls" aria-hidden="true">
   <button class="ctl-btn" id="btnLeft" aria-label="Izquierda">⟵</button>
@@ -53,40 +188,67 @@
   <button class="ctl-btn" id="btnRight" aria-label="Derecha">⟶</button>
   <button class="ctl-btn small" id="btnRestart" aria-label="Reiniciar">↻</button>
 </div>
+
 <script>
 /**
- * SMEAT vs Contaminantes — HTML Canvas (1 nivel)
- * - Flechas ← → o botones táctiles para mover; X / botón ● para disparar.
- * - Enemigos (contaminantes) dibujados con Canvas; jugador es imagen.
- * - Responsive: en pantallas pequeñas se reduce la formación enemiga.
- * - Móviles: botones táctiles, preventDefault en gestos y canvas no desplazable.
+ * SMEAT vs Contaminantes — HTML Canvas
+ * Dificultades: Fácil (disparo recto), Difícil (apuntado al jugador, ráfagas).
+ * Enemigos = no renovables: carbón (trozos), barriles de petróleo, antorcha de gas.
  */
 
 /*****************
  * CONFIGURACIÓN *
  *****************/
 const CONFIG = {
-  CANVAS_W: 480,
-  CANVAS_H: 640,
-  PLAYER_SPEED: 260, // px/s en espacio lógico
-  PLAYER_W: 70,
-  PLAYER_H: 70,
+  CANVAS_W: 480, CANVAS_H: 640,
+  PLAYER_SPEED: 260,
+  PLAYER_W: 70, PLAYER_H: 70,
   PLAYER_BULLET_SPEED: -520,
   PLAYER_MAX_BULLETS: 2,
-  ENEMY_ROWS: 4,
-  ENEMY_COLS: 8,
-  ENEMY_SPACING_X: 44,
-  ENEMY_SPACING_Y: 40,
+  ENEMY_ROWS: 4, ENEMY_COLS: 8,
+  ENEMY_SPACING_X: 44, ENEMY_SPACING_Y: 40,
   ENEMY_START_Y: 90,
-  ENEMY_OSC_AMPL: 26,
-  ENEMY_OSC_SPEED: 1.2,
-  ENEMY_STEP_DOWN: 8,
-  ENEMY_BULLET_SPEED: 240,
-  ENEMY_FIRE_INTERVAL: [1.6, 3.2],
+  ENEMY_OSC_AMPL: 26, ENEMY_OSC_SPEED: 1.2, ENEMY_STEP_DOWN: 8,
+  ENEMY_BULLET_SPEED: 300,
+  ENEMY_FIRE_INTERVAL: [0.45, 0.95],
+  ENEMY_BURST_COUNT: 3,
+  ENEMY_BURST_SPREAD_DEG: 18,
+  ENEMY_AIM_AT_PLAYER: true,
+  BOSS_EXTRA_BULLETS: 2,
   LIVES: 3,
   PLAYER_INV_TIME: 1.5,
-  PLAYER_IMG_SRC: "https://robodacta-steam.mx/wp-content/uploads/2025/08/NaveSMEAT.png", // ← cambia a tu PNG de SMEAT
+  PLAYER_IMG_SRC: "https://robodacta-steam.mx/wp-content/uploads/2025/08/NaveSMEAT.png",
 };
+// Encogimiento de la hitbox del jugador (px por cada lado)
+const PLAYER_HITBOX_INSET = 12;
+
+/******** DIFICULTAD ********/
+const DIFFICULTY = {
+  presets: {
+    easy: {
+      ENEMY_FIRE_INTERVAL: [1.2, 2.2],
+      ENEMY_BURST_COUNT: 1,
+      ENEMY_BURST_SPREAD_DEG: 0,
+      ENEMY_AIM_AT_PLAYER: false,
+      BOSS_EXTRA_BULLETS: 0,
+      ENEMY_BULLET_SPEED: 240
+    },
+    hard: {
+      ENEMY_FIRE_INTERVAL: [0.45, 0.95],
+      ENEMY_BURST_COUNT: 3,
+      ENEMY_BURST_SPREAD_DEG: 18,
+      ENEMY_AIM_AT_PLAYER: true,
+      BOSS_EXTRA_BULLETS: 2,
+      ENEMY_BULLET_SPEED: 300
+    }
+  },
+  current: null
+};
+function applyDifficulty(mode){
+  const p = DIFFICULTY.presets[mode] || DIFFICULTY.presets.hard;
+  DIFFICULTY.current = mode;
+  Object.assign(CONFIG, p);
+}
 
 /****************
  * VARIABLES    *
@@ -99,48 +261,50 @@ function scaleCanvas(){
   DPR = Math.max(1, Math.floor(window.devicePixelRatio || 1));
   const { CANVAS_W: w, CANVAS_H: h } = CONFIG;
   canvas.width = w * DPR; canvas.height = h * DPR;
-  canvas.style.width = '100%'; // responsivo: el contenedor decide
-  const ratio = w/h; // asegura altura en función del ancho disponible
+  canvas.style.width = '100%';
+  const ratio = w/h;
   const cssW = canvas.getBoundingClientRect().width;
   const cssH = Math.min(window.innerHeight*0.78, cssW/ratio);
   canvas.style.height = cssH + 'px';
   ctx.setTransform(DPR,0,0,DPR,0,0);
 }
-
-// Llama al escalar y al cambiar de orientación/tamaño
 scaleCanvas();
-window.addEventListener('resize', ()=>{ applyResponsiveSettings(); scaleCanvas(); if(state!==STATE.PLAY){ // re-forma enemigos si no estás jugando
-  enemies = createEnemyFormation(); }
+window.addEventListener('resize', ()=>{
+  applyResponsiveSettings(); scaleCanvas();
+  if(state!==STATE.PLAY){ enemies = createEnemyFormation(); }
 });
 
 const KEYS = { left:false, right:false, shoot:false, start:false, pause:false, restart:false };
-
-// Previene scroll con gestos en móviles sobre el canvas y botones
 ['touchstart','touchmove','touchend'].forEach(type=>{
   window.addEventListener(type, (e)=>{
     if(e.target.closest('#game') || e.target.closest('.touch-controls')) e.preventDefault();
   }, { passive:false });
 });
-window.addEventListener('contextmenu', e=>{ if(e.target.closest('#game') || e.target.closest('.touch-controls')) e.preventDefault(); });
-
-// Teclado (desktop)
+window.addEventListener('contextmenu', e=>{
+  if(e.target.closest('#game') || e.target.closest('.touch-controls')) e.preventDefault();
+});
 window.addEventListener('keydown', (e)=>{
-  if(['ArrowLeft','ArrowRight','Space','KeyX'].includes(e.code)) e.preventDefault();
-  if(e.code==='ArrowLeft') KEYS.left=true;
-  if(e.code==='ArrowRight') KEYS.right=true;
-  if(e.code==='KeyX' || e.code==='Space') KEYS.shoot=true;
-  if(e.code==='Enter') KEYS.start=true;
-  if(e.code==='KeyP') KEYS.pause=true;
-  if(e.code==='KeyR') KEYS.restart=true; // Reiniciar con R
+  // Evita scroll con estas teclas
+  if(['ArrowLeft','ArrowRight','Space','KeyX','KeyP','KeyR'].includes(e.code)) e.preventDefault();
+
+  if(e.code==='ArrowLeft')  KEYS.left = true;
+  if(e.code==='ArrowRight') KEYS.right = true;
+  if(e.code==='KeyX' || e.code==='Space') KEYS.shoot = true;
+
+  // Enter solo cuando el overlay está visible (ya lo manejas para "Comenzar")
+  if(e.code==='Enter') KEYS.start = true;
+
+  if(e.code==='KeyP') togglePause();     // ← pausa / reanuda
+  if(e.code==='KeyR') restartGame();     // ← reinicia
 });
+
 window.addEventListener('keyup', (e)=>{
-  if(e.code==='ArrowLeft') KEYS.left=false;
-  if(e.code==='ArrowRight') KEYS.right=false;
-  if(e.code==='KeyX' || e.code==='Space') KEYS.shoot=false;
-  if(e.code==='Enter') KEYS.start=false;
-  if(e.code==='KeyP') KEYS.pause=false;
-  if(e.code==='KeyR') KEYS.restart=false;
+  if(e.code==='ArrowLeft')  KEYS.left = false;
+  if(e.code==='ArrowRight') KEYS.right = false;
+  if(e.code==='KeyX' || e.code==='Space') KEYS.shoot = false;
+  if(e.code==='Enter') KEYS.start = false;
 });
+
 
 /***************************
  * SPRITE DEL JUGADOR (IMG) *
@@ -148,11 +312,9 @@ window.addEventListener('keyup', (e)=>{
 let playerSpriteState = 'empty';
 const playerImg = new Image();
 playerImg.crossOrigin = 'anonymous';
-
 function isPlayerDrawable(){
   return playerSpriteState === 'ready' && playerImg.complete && playerImg.naturalWidth > 0 && playerImg.naturalHeight > 0;
 }
-
 function setPlayerImage(src){
   playerSpriteState = 'loading';
   playerImg.onload = ()=>{
@@ -165,7 +327,7 @@ function setPlayerImage(src){
 }
 setPlayerImage(CONFIG.PLAYER_IMG_SRC);
 
-// Estados generales del juego
+// Estados
 const STATE = { MENU:'menu', PLAY:'play', PAUSE:'pause', WIN:'win', LOSE:'lose' };
 let state = STATE.MENU;
 let lastTime = 0; let time = 0;
@@ -173,8 +335,25 @@ let lastTime = 0; let time = 0;
 // Entidades
 let player, bullets, enemies, enemyBullets, particles, lives, score, nextEnemyShotAt;
 
+function overlayVisible(){
+  const ov = document.getElementById('difficultyOverlay');
+  return ov && getComputedStyle(ov).display !== 'none';
+}
+
+function togglePause(){
+  if (overlayVisible()) return;         // no pausar si está el selector visible
+  if (state === STATE.PLAY)      state = STATE.PAUSE;
+  else if (state === STATE.PAUSE) state = STATE.PLAY;
+}
+
+function restartGame(){
+  if (overlayVisible()) return;         // no reiniciar mientras se elige dificultad
+  resetGame();
+  state = STATE.PLAY;
+}
+
 /****************************
- * RESPONSIVE (enemigos)    *
+ * RESPONSIVE (enemigos)
  ****************************/
 let lastBreakpoint = '';
 function getBreakpoint(){
@@ -199,7 +378,7 @@ function createEnemyFormation(){
   const ox = (CONFIG.CANVAS_W - (CONFIG.ENEMY_COLS-1)*CONFIG.ENEMY_SPACING_X)/2;
   for(let r=0;r<CONFIG.ENEMY_ROWS;r++){
     for(let c=0;c<CONFIG.ENEMY_COLS;c++){
-      const type = r===0 ? 'boss' : (r<=1 ? 'butterfly' : 'bee'); // Tipos conservados; dibujados como contaminantes
+      const type = r===0 ? 'boss' : (r<=1 ? 'butterfly' : 'bee');
       arr.push({
         baseX: ox + c*CONFIG.ENEMY_SPACING_X,
         baseY: CONFIG.ENEMY_START_Y + r*CONFIG.ENEMY_SPACING_Y,
@@ -210,7 +389,6 @@ function createEnemyFormation(){
   }
   return arr;
 }
-
 function scheduleNextEnemyShot(){
   const [a,b] = CONFIG.ENEMY_FIRE_INTERVAL;
   nextEnemyShotAt = time + (a + Math.random()*(b-a));
@@ -233,6 +411,13 @@ function resetGame(){
   enemies = createEnemyFormation();
   scheduleNextEnemyShot();
 }
+
+function startGame(){
+  resetGame();
+  state = STATE.PLAY;
+  gameWon = false; // LD: arranca bloqueado; el wrapper LD lo bloquea visualmente
+}
+
 
 /****************
  * BUCLE JUEGO  *
@@ -265,13 +450,15 @@ function update(dt){
     const alive = enemies.filter(e=>e.alive);
     if(alive.length){
       const shooter = alive[(Math.random()*alive.length)|0];
-      enemyBullets.push({ x: shooter.x+shooter.w/2-2, y: shooter.y+shooter.h, w:4, h:10, vy: CONFIG.ENEMY_BULLET_SPEED });
+      enemyShoot(shooter);
     }
     scheduleNextEnemyShot();
   }
 
-  enemyBullets.forEach(b=> b.y += b.vy*dt);
-  enemyBullets = enemyBullets.filter(b => b.y < CONFIG.CANVAS_H+16);
+  enemyBullets.forEach(b=>{ b.x += (b.vx||0)*dt; b.y += b.vy*dt; });
+  enemyBullets = enemyBullets.filter(b =>
+    b.y < CONFIG.CANVAS_H + 20 && b.y > -20 && b.x > -20 && b.x < CONFIG.CANVAS_W + 20
+  );
 
   bullets.forEach(b=>{
     enemies.forEach(e=>{
@@ -286,9 +473,9 @@ function update(dt){
   bullets = bullets.filter(b => b.y>-50);
 
   if(player.inv>0) player.inv -= dt;
-  enemyBullets.forEach(b=>{ if(player.inv<=0 && rectsOverlap(b, player)){ b.y = CONFIG.CANVAS_H+999; damagePlayer(); } });
+  enemyBullets.forEach(b=>{ if(player.inv<=0 && rectsOverlap(b, playerHitRect())){ b.y = CONFIG.CANVAS_H+999; damagePlayer(); } });
 
-  enemies.forEach(e=>{ if(e.alive && player.inv<=0 && rectsOverlap(e, player)){ e.alive=false; spawnExplosion(e.x+e.w/2, e.y+e.h/2, e.type); damagePlayer(); } });
+  enemies.forEach(e=>{ if(e.alive && player.inv<=0 && rectsOverlap(e, playerHitRect())){ e.alive=false; spawnExplosion(e.x+e.w/2, e.y+e.h/2, e.type); damagePlayer(); } });
 
   particles.forEach(p=>{ p.life -= dt; p.x += p.vx*dt; p.y += p.vy*dt; p.vx*=0.99; p.vy+=40*dt; });
   particles = particles.filter(p=> p.life>0);
@@ -333,24 +520,34 @@ function draw(){
 
   drawHUD();
 
-  if(state===STATE.MENU){ drawCenterText('SMEAT vs Contaminantes\nEnter o Tocar Iniciar', 22, '#e5e7eb'); }
-  if(state===STATE.WIN){ drawCenterText('¡GANASTE!\nPresiona R o ↻ para reiniciar', 24, '#a7f3d0'); }
+  // NUEVO: solo muestra “Elige dificultad…” si el overlay está visible
+  if (state === STATE.MENU) {
+    const ov = document.getElementById('difficultyOverlay');
+    const overlayVisible = ov && getComputedStyle(ov).display !== 'none';
+    drawCenterText(
+      overlayVisible
+        ? 'SMEAT vs Contaminantes\nElige dificultad para comenzar'
+        : 'SMEAT vs Contaminantes\nEnter o Tocar Iniciar',
+      22,
+      '#e5e7eb'
+    );
+  }
+
+  if(state===STATE.WIN){ drawCenterText('¡GANASTE!, puedes completar la lección\nó\nPresiona R o ↻ para reiniciar', 24, '#a7f3d0'); }
   if(state===STATE.LOSE){ drawCenterText('GAME OVER\nPresiona R o ↻ para reiniciar', 24, '#fecaca'); }
   if(state===STATE.PAUSE){ drawCenterText('P A U S A', 26, '#eab308'); }
 }
 
 function drawHUD(){
   ctx.fillStyle = '#cbd5e1'; ctx.font = '14px system-ui,Segoe UI,Inter'; ctx.textBaseline = 'top';
-  const scoreText = 'Puntos: '+(score|0);
-  ctx.fillText(scoreText, 12, 10);
-  // Vidas como corazones (alineados a la derecha)
+  ctx.fillText('Puntos: '+(score|0), 12, 10);
   const s = 14, gap = 6; const totalW = CONFIG.LIVES * s + (CONFIG.LIVES-1)*gap;
   let x = CONFIG.CANVAS_W - totalW - 12; const y = 12;
   for(let i=0;i<lives;i++){ drawHeart(x, y, s, '#ef4444'); x += s + gap; }
   ctx.fillStyle = '#94a3b8'; ctx.fillText('Vidas', CONFIG.CANVAS_W-70, 28);
 }
 
-// Estrellas de fondo animadas
+// Fondo de estrellas
 const stars = Array.from({length:120}, () => ({ x: Math.random()*CONFIG.CANVAS_W, y: Math.random()*CONFIG.CANVAS_H, s: Math.random()*1.5+0.2 }));
 function drawStarfield(){
   ctx.fillStyle = '#0b1220'; ctx.fillRect(0,0,CONFIG.CANVAS_W,CONFIG.CANVAS_H);
@@ -366,27 +563,44 @@ function drawCenterText(txt, size=18, color='#fff'){
   ctx.textAlign='start'; ctx.textBaseline='alphabetic';
 }
 
-// DIBUJOS DE CONTAMINANTES (manteniendo tipos)
+// Enemigos: carbón, barril petróleo, antorcha de gas
 function drawEnemy(e){
   ctx.save(); ctx.translate(e.x+e.w/2, e.y+e.h/2);
   ctx.lineWidth = 1; ctx.strokeStyle = '#0a0a0a';
   if(e.type==='bee'){
-    // LATA
-    const w=18,h=22; ctx.fillStyle = '#9ca3af';
-    roundRect(-w/2,-h/2,w,h,4,true,false);
-    ctx.fillStyle = '#d1d5db'; ctx.fillRect(-w/2+2,-h/2+2,w-4,3);
-    ctx.fillRect(-w/2+2,h/2-5,w-4,3);
-    ctx.fillStyle = '#111827'; ctx.fillRect(-2,-h/2+4,4,2);
+    // TROZO DE CARBÓN
+    ctx.fillStyle = '#1f2937';
+    ctx.beginPath();
+    ctx.moveTo(-10,-8); ctx.lineTo(8,-9); ctx.lineTo(11,-2); ctx.lineTo(7,10);
+    ctx.lineTo(-8,9); ctx.lineTo(-12,0); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#4b5563'; ctx.fillRect(-6,-3,4,2); ctx.fillRect(2,1,3,2);
   } else if(e.type==='butterfly'){
-    // BOTELLA
-    ctx.fillStyle = '#60a5fa';
-    ctx.beginPath(); ctx.moveTo(-7,10); ctx.lineTo(7,10); ctx.quadraticCurveTo(9,4,3,2); ctx.lineTo(3,-6); ctx.quadraticCurveTo(3,-10,-3,-10); ctx.lineTo(-3,2); ctx.quadraticCurveTo(-9,4,-7,10); ctx.closePath(); ctx.fill();
-    ctx.fillStyle = '#1e293b'; ctx.fillRect(-3,-9,6,3);
-  } else {
-    // BOLSA DE BASURA
+    // BARRIL DE PETRÓLEO
+    const w=18,h=22;
+    ctx.fillStyle = '#111827';
+    roundRect(-w/2,-h/2,w,h,3,true,false);
     ctx.fillStyle = '#374151';
-    ctx.beginPath(); ctx.moveTo(0,-10); ctx.quadraticCurveTo(6,-12,8,-6); ctx.quadraticCurveTo(10,-2,10,4); ctx.quadraticCurveTo(0,12,-10,4); ctx.quadraticCurveTo(-10,-2,-8,-6); ctx.quadraticCurveTo(-6,-12,0,-10); ctx.closePath(); ctx.fill();
-    ctx.fillStyle = '#9ca3af'; ctx.fillRect(-2,-10,4,3);
+    ctx.fillRect(-w/2+2,-h/2+3,w-4,2);
+    ctx.fillRect(-w/2+2, h/2-5,w-4,2);
+    ctx.fillStyle = '#0ea5e9';
+    ctx.beginPath(); ctx.moveTo(0,-2);
+    ctx.quadraticCurveTo(5,2,0,8);
+    ctx.quadraticCurveTo(-5,2,0,-2);
+    ctx.fill();
+  } else { // boss
+    // ANTORCHA DE GAS
+    ctx.fillStyle = '#6b7280'; ctx.fillRect(-6,0,12,12);
+    const t = Math.sin(time*6)*2;
+    ctx.fillStyle = '#f59e0b';
+    ctx.beginPath(); ctx.moveTo(0,-12+t);
+    ctx.quadraticCurveTo(6,-2,0,4);
+    ctx.quadraticCurveTo(-6,-2,0,-12+t);
+    ctx.fill();
+    ctx.fillStyle = '#ef4444';
+    ctx.beginPath(); ctx.moveTo(0,-8+t);
+    ctx.quadraticCurveTo(4,-1,0,2);
+    ctx.quadraticCurveTo(-4,-1,0,-8+t);
+    ctx.fill();
   }
   ctx.restore();
 }
@@ -396,7 +610,6 @@ function roundRect(x,y,w,h,r,fill,stroke){
   ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath();
   if(fill) ctx.fill(); if(stroke) ctx.stroke();
 }
-
 function drawHeart(x,y,size,color){
   const s = size; ctx.save(); ctx.translate(x, y);
   ctx.beginPath(); ctx.moveTo(s*0.5, s*0.35);
@@ -410,58 +623,73 @@ function drawHeart(x,y,size,color){
 /****************
  * UTILIDADES   *
  ****************/
+function playerHitRect(){
+  const ins = Math.max(0, PLAYER_HITBOX_INSET|0);
+  return {
+    x: player.x + ins,
+    y: player.y + ins,
+    w: Math.max(1, player.w - 2*ins),
+    h: Math.max(1, player.h - 2*ins)
+  };
+}
 function rectsOverlap(a,b){ return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y; }
 function spawnExplosion(x,y,type){
   const n = 20; const color = type==='player'? '#93c5fd' : (type==='boss'? '#fecaca' : '#fde68a');
   for(let i=0;i<n;i++) particles.push({ x, y, vx:(Math.random()*120-60), vy:(Math.random()*-120), life: Math.random()*0.6+0.25, maxLife: 0.8, color });
 }
+function rotateVec(x,y,deg){
+  const r = deg * Math.PI/180;
+  const c = Math.cos(r), s = Math.sin(r);
+  return { x: x*c - y*s, y: x*s + y*c };
+}
+
+/*********** DISPARO ENEMIGO ***********/
+function enemyShoot(shooter){
+  const baseX = shooter.x + shooter.w/2 - 2;
+  const baseY = shooter.y + shooter.h;
+  const extra = (shooter.type === 'boss') ? CONFIG.BOSS_EXTRA_BULLETS : 0;
+  const count = CONFIG.ENEMY_BURST_COUNT + extra;
+
+  let vx0 = 0, vy0 = CONFIG.ENEMY_BULLET_SPEED;
+  if (CONFIG.ENEMY_AIM_AT_PLAYER){
+    const dx = (player.x + player.w/2) - baseX;
+    const dy = (player.y + player.h/2) - baseY;
+    const len = Math.hypot(dx,dy) || 1;
+    vx0 = dx/len * CONFIG.ENEMY_BULLET_SPEED;
+    vy0 = dy/len * CONFIG.ENEMY_BULLET_SPEED;
+  }
+  const mid = (count - 1)/2;
+  for(let i=0;i<count;i++){
+    const offset = (i - mid) * CONFIG.ENEMY_BURST_SPREAD_DEG;
+    const v = rotateVec(vx0, vy0, offset);
+    enemyBullets.push({ x: baseX, y: baseY, w:4, h:10, vx: v.x, vy: v.y });
+  }
+}
 
 /****************
  * ENTRADAS UI  *
  ****************/
-const btnStart = document.getElementById('btnStart');
-btnStart.addEventListener('click', ()=>{ if(state===STATE.MENU || state===STATE.LOSE || state===STATE.WIN){ startGame(); }});
-
-window.addEventListener('blur', ()=>{ if(state===STATE.PLAY) state = STATE.PAUSE; });
-
-function startGame(){ resetGame(); state = STATE.PLAY; }
-
-// Hotkeys de estado
-setInterval(()=>{
-  if(KEYS.start && (state===STATE.MENU || state===STATE.WIN || state===STATE.LOSE)) startGame();
-  if(KEYS.pause && state===STATE.PLAY){ state=STATE.PAUSE; KEYS.pause=false; }
-  else if(KEYS.pause && state===STATE.PAUSE){ state=STATE.PLAY; KEYS.pause=false; }
-  // Reiniciar con R en cualquier estado
-  if(KEYS.restart){ resetGame(); state=STATE.PLAY; KEYS.restart=false; }
-}, 50);
-
-/********************
- * CONTROLES TÁCTILES
- ********************/
 const btnLeft  = document.getElementById('btnLeft');
 const btnRight = document.getElementById('btnRight');
 const btnFire  = document.getElementById('btnFire');
 const btnRestart = document.getElementById('btnRestart');
 
-// Reinicio táctil/ratón sin depender de 'click' (que puede anularse por preventDefault en touch)
 function bindRestart(btn){
   if(!btn) return;
   let lastTs = 0;
   const go = (e)=>{
     e.preventDefault();
     const now = performance.now();
-    if(now - lastTs < 220) return; // evita dobles por eventos duplicados
+    if(now - lastTs < 220) return;
     lastTs = now;
     resetGame();
     state = STATE.PLAY;
     try { if(navigator.vibrate) navigator.vibrate(10); } catch(_) {}
   };
-  // Usamos pointerdown (moderno) + fallbacks
   btn.addEventListener('pointerdown', go, {passive:false});
   btn.addEventListener('touchstart', go, {passive:false});
   btn.addEventListener('mousedown', go, {passive:false});
 }
-
 function bindHold(btn, key){
   const down = (e)=>{ e.preventDefault(); KEYS[key]=true; };
   const up   = (e)=>{ e.preventDefault(); KEYS[key]=false; };
@@ -472,12 +700,168 @@ if(btnLeft && btnRight && btnFire){ bindHold(btnLeft,'left'); bindHold(btnRight,
 bindRestart(btnRestart);
 
 /****************
+ * OVERLAY UI   *
+ ****************/
+const overlay = document.getElementById('difficultyOverlay');
+const btnBegin = document.getElementById('btnBegin');
+const btnCancel = document.getElementById('btnCancel');
+if (btnCancel) {
+  btnCancel.addEventListener('click', () => {
+    document.getElementById('difficultyOverlay').style.display = 'none';
+  });
+}
+const chosenText = document.getElementById('chosenText');
+let chosenMode = null;
+
+function setChosen(mode){
+  chosenMode = mode;
+  document.querySelectorAll('.card-diff').forEach(el=>{
+    const active = el.dataset.mode === mode;
+    el.classList.toggle('active', active);
+    el.setAttribute('aria-pressed', active ? 'true' : 'false');
+  });
+  if(mode){
+    btnBegin.disabled = false;
+    chosenText.textContent = 'Seleccionado: ' + (mode==='easy' ? 'Fácil' : 'Difícil');
+  }else{
+    btnBegin.disabled = true;
+    chosenText.textContent = 'Selecciona un modo';
+  }
+}
+document.getElementById('diffGrid').addEventListener('click', (e)=>{
+  const btn = e.target.closest('.card-diff');
+  if(btn){ setChosen(btn.dataset.mode); }
+});
+btnBegin.addEventListener('click', ()=>{
+  if(!chosenMode) return;
+  applyDifficulty(chosenMode);
+  overlay.style.display = 'none';
+  startGame();
+});
+
+window.addEventListener('keydown', (e)=>{
+  if(e.key === 'Enter' && overlay && overlay.style.display !== 'none' && chosenMode){
+    e.preventDefault(); btnBegin.click();
+  }
+});
+
+/****************
  * INTEGRACIÓN  *
  ****************/
 function fireComplete(kind, extra={}){
   const ev = new CustomEvent('galagaEvent', { detail: { kind, ...extra }});
   document.dispatchEvent(ev);
 }
+
+/**************
+ * LearnDash  *
+ **************/
+/************** LearnDash (bloqueo robusto y sin bucles) **************/
+let gameWon = false;
+let ldBtn = null, ldForm = null;
+
+// Encuentra botón de LD en distintos temas
+function findLdButton() {
+  return document.querySelector(
+    '.learndash_mark_complete_button,' +
+    'input.learndash_mark_complete_button,' +
+    'button.learndash_mark_complete_button,' +
+    '.ld-mark-complete,' +
+    '.sfwd-mark-complete input[type="submit"],' +
+    '.sfwd-mark-complete button'
+  );
+}
+
+function isLocked(){
+  if(!ldBtn) return false;
+  const aria = ldBtn.getAttribute('aria-disabled') === 'true';
+  const dis  = !!ldBtn.disabled;
+  const pe   = (ldBtn.style && ldBtn.style.pointerEvents) === 'none';
+  return aria || dis || pe;
+}
+
+function lockLdButton() {
+  if (!ldBtn || isLocked()) return;        // ← evita rebloquear en bucle
+  ldBtn.disabled = true;
+  ldBtn.setAttribute('aria-disabled', 'true');
+  ldBtn.setAttribute('tabindex', '-1');
+  ldBtn.style.opacity = '0.6';
+  ldBtn.style.cursor = 'not-allowed';
+  ldBtn.style.pointerEvents = 'none';
+}
+
+function unlockLdButton() {
+  if (!ldBtn) return;
+  ldBtn.disabled = false;
+  ldBtn.removeAttribute('aria-disabled');
+  ldBtn.removeAttribute('tabindex');
+  ldBtn.style.opacity = '';
+  ldBtn.style.cursor = '';
+  ldBtn.style.pointerEvents = '';
+}
+
+// Espera al botón y aplica bloqueos
+function waitForLdButton(cb) {
+  const iv = setInterval(() => {
+    const b = findLdButton();
+    if (b) { clearInterval(iv); cb(b, b.closest('form')); }
+  }, 100);
+}
+
+// Guard global de clicks (aun si el tema reatacha handlers)
+function globalLdClickGuard(e) {
+  const targetBtn = e.target.closest(
+    '.learndash_mark_complete_button, .ld-mark-complete, .sfwd-mark-complete input[type="submit"], .sfwd-mark-complete button'
+  );
+  if (targetBtn && !gameWon) {
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    return false;
+  }
+}
+document.addEventListener('click', globalLdClickGuard, true);
+
+// Inicializa y bloquea
+waitForLdButton((btn, form) => {
+  ldBtn = btn; ldForm = form;
+  lockLdButton();
+
+  // Evita submit si no se ha ganado
+  if (ldForm) {
+    ldForm.addEventListener('submit', (ev) => {
+      if (!gameWon) { ev.preventDefault(); ev.stopImmediatePropagation(); }
+    }, true);
+  }
+
+  // Observa cambios del tema, pero SIN bucle: sólo re-bloquea si quedó desbloqueado
+  const mo = new MutationObserver(() => {
+    if (!gameWon && !isLocked()) lockLdButton();
+  });
+  mo.observe(ldBtn, { attributes: true }); // observar todo, el guard evita loops
+});
+
+// Eventos del juego
+document.addEventListener('galagaEvent', (e) => {
+  const kind = e.detail && e.detail.kind;
+  if (kind === 'win')  { gameWon = true;  unlockLdButton(); }
+  if (kind === 'lose') { gameWon = false; lockLdButton();   }
+});
+
+// Asegura bloqueo al reiniciar/empezar
+const _resetGameLD = resetGame;
+resetGame = function () {
+  _resetGameLD();
+  gameWon = false;
+  lockLdButton();
+};
+
+const _startGameLD = startGame;
+startGame = function () {
+  _startGameLD();
+  gameWon = false;
+  lockLdButton();
+};
+
 </script>
 </body>
 </html>
